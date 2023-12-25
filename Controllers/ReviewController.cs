@@ -34,9 +34,10 @@ namespace TechShopBackendDotnet.Controllers
         {
             var reviews = _context.Reviews
                             .Where(r => r.ProductId == product_id)
+                            .OrderByDescending(r => r.CreatedAt)
                             .ToList();
 
-            if (reviews.Count == 0) // Kiểm tra xem danh sách đánh giá có rỗng không
+            if (reviews.Count == 0) 
             {
                 return Ok(new
                 {
@@ -47,7 +48,7 @@ namespace TechShopBackendDotnet.Controllers
 
             return Ok(new
             {
-                reviews = reviews // Trả về danh sách đánh giá nếu có
+                reviews = reviews 
             });
         }
 
