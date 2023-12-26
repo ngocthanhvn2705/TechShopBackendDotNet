@@ -96,6 +96,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddTransient<EmailService>();
+builder.Services.AddHttpClient();
 
 
 

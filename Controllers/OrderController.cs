@@ -5,6 +5,10 @@ using System.Security.Cryptography.Xml;
 using TechShopBackendDotnet.Token;
 using static TechShopBackendDotnet.Controllers.OrderController;
 using TechShopBackendDotnet.OtherModels;
+using System.Text.Json;
+using System.Text;
+using System.Net.Http.Headers;
+using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 
 namespace TechShopBackendDotnet.Controllers
 {
@@ -14,11 +18,13 @@ namespace TechShopBackendDotnet.Controllers
     {
         private readonly TechShopContext _context;
         private readonly AppSettings _appSettings;
+        private readonly HttpClient _httpClient;
 
-        public OrderController(TechShopContext context, AppSettings appSettings)
+        public OrderController(TechShopContext context, AppSettings appSettings, HttpClient httpClient)
         {
             _context = context;
             _appSettings = appSettings;
+            _httpClient = httpClient;
         }
 
       
@@ -474,6 +480,263 @@ namespace TechShopBackendDotnet.Controllers
 
         }
 
+        public class ShippingFeeModel
+        {
+            public string province_name { get; set; }
+            public string district_name { get; set; }   
+            public string ward_name { get; set; }
+        }
+
+        [HttpPost("shipping_fee")]
+        public async Task<IActionResult> CalculateShippingFee([FromBody] ShippingFeeModel shippingFeeModel)
+        {
+            try
+            {
+                int provinceID = await GetProvinceID(shippingFeeModel.province_name);
+
+                int districtID = await GetDistrictID(provinceID, shippingFeeModel.district_name);
+
+                string wardCode = await GetWardID(districtID, shippingFeeModel.ward_name);
+
+                int price = await CalculateFee(districtID, wardCode);
+
+
+                if (price > 0)
+                {
+                    return Ok(new
+                    {
+                        status = 200,
+                        data = new
+                        {
+                            total_fee = price
+                        }
+                    });
+
+                }
+                else
+                {
+                    return Ok(new { status = 113, message = "Can't calculate fee" });
+                }
+            }catch(Exception ex)
+            {
+                return Ok(new { status = 113, message = "Can't calculate fee" });
+            }
+            
+        }
+
+        [HttpPost("get_provinceid")]
+        public async Task<int> GetProvinceID(string provinceName)
+        {
+            provinceName = provinceName.ToLower();
+            string urlProvince = "https://online-gateway.ghn.vn/shiip/public-api/master-data/province";
+
+            using var client = new HttpClient();
+
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("Token", "0a8e7e91-8da4-11ee-a59f-a260851ba65c");
+
+            HttpResponseMessage response = await client.GetAsync(urlProvince);
+
+            Console.WriteLine(response);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+
+                var responseData = JsonSerializer.Deserialize<PostProvinceResponse>(responseContent);
+                
+                foreach (DataProvince item in responseData.data)
+                {
+                    List<string> lowerCaseList = item.NameExtension.Select(item => item.ToLower()).ToList();
+                    if (lowerCaseList.Contains(provinceName) || item.ProvinceName.ToLower() == provinceName)
+                    {
+                        return item.ProvinceID;
+                    }
+                }
+            }
+
+            return -1;
+        }
+
+        [HttpPost("get_districid")]
+        public async Task<int> GetDistrictID(int provinceId, string districtName)
+        {
+            districtName = districtName.ToLower();
+            string urlProvince = "https://online-gateway.ghn.vn/shiip/public-api/master-data/district";
+
+            using var client = new HttpClient();
+
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("Token", "0a8e7e91-8da4-11ee-a59f-a260851ba65c");
+
+            var postData = new { province_id = provinceId }; 
+
+            var json = JsonSerializer.Serialize(postData);
+
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PostAsync(urlProvince, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+
+                var responseData = JsonSerializer.Deserialize<PostDistrictResponse>(responseContent);
+                foreach (DataDistrict item in responseData.data)
+                {
+                    List<string> lowerCaseList = item.NameExtension.Select(item => item.ToLower()).ToList();
+                    if (lowerCaseList.Contains(districtName) || item.DistrictName.ToLower() == districtName)
+                    {
+                        return item.DistrictID;
+                    }
+                }
+            }
+
+            return -1;
+        }
+
+        [HttpPost("get_wardid")]
+        public async Task<string> GetWardID(int districtId, string wardName)
+        {
+            wardName = wardName.ToLower();
+
+            string urlProvince = "https://online-gateway.ghn.vn/shiip/public-api/master-data/ward";
+
+            using var client = new HttpClient();
+
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("Token", "0a8e7e91-8da4-11ee-a59f-a260851ba65c");
+
+            var postData = new { district_id = districtId };
+
+            var json = JsonSerializer.Serialize(postData);
+
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PostAsync(urlProvince, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+
+                var responseData = JsonSerializer.Deserialize<PostWardResponse>(responseContent);
+                foreach (DataWard item in responseData.data)
+                {
+                    List<string> lowerCaseList = item.NameExtension.Select(item => item.ToLower()).ToList();
+                    if (lowerCaseList.Contains(wardName) || item.WardName.ToLower() == wardName)
+                    {
+                        return item.WardCode;
+                    }
+                }
+            }
+
+            return "none";
+        }
+
+        [HttpPost("get_serviceid")]
+        public async Task<Dictionary<string, int>> GetServiceID(int to_district_id)
+        {
+            var shop_id = 4007360;
+            var from_district_id = 3695;
+            var service_id = -1;
+            var service_type_id = -1;
+
+            string urlService = "https://online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/available-services";
+
+            using var client = new HttpClient();
+
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("Token", "0a8e7e91-8da4-11ee-a59f-a260851ba65c");
+
+            var postData = new
+            {
+                shop_id = shop_id,
+                from_district = from_district_id,
+                to_district = to_district_id,
+            };
+
+            var json = JsonSerializer.Serialize(postData);
+
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PostAsync(urlService, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+
+                var responseData = JsonSerializer.Deserialize<PostServiceResponse>(responseContent);
+
+                service_id = responseData.data[0].service_id;
+                service_type_id = responseData.data[0].service_type_id;
+
+                var serviceDict = new Dictionary<string, int>
+                                {
+                                    { "service_id", service_id },
+                                    { "service_type_id", service_type_id }
+                                };
+
+                return serviceDict;
+            }
+
+            return new Dictionary<string, int>
+                    {
+                        { "service_id", -1 },
+                        { "service_type_id", -1 }
+                    };
+        }
+
+        [HttpPost("calculatefee")]
+        public async Task<int> CalculateFee(int to_district_id, string to_ward_code)
+        {
+            var total_fee = -1;
+            var from_district_id = 3695;
+            var from_ward_code = "90737";
+            var service = GetServiceID(to_district_id).Result;
+
+
+            string urlCalculate = "https://online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee";
+
+            using var client = new HttpClient();
+
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("Token", "0a8e7e91-8da4-11ee-a59f-a260851ba65c");
+
+            var postData = new {
+                from_district_id = from_district_id,
+                from_ward_code = from_ward_code,
+                service_id = service["service_id"],
+                service_type_id = service["service_type_id"],
+                to_district_id = to_district_id,
+                to_ward_code = to_ward_code,
+                height = 0,
+                length = 0,
+                weight = 1000,
+                width = 0,
+                insurance_value = 300000,
+                cod_failed_amount = 20000,
+                coupon = ""
+            };
+
+            var json = JsonSerializer.Serialize(postData);
+
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PostAsync(urlCalculate, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+
+                var responseData = JsonSerializer.Deserialize<PostCalculateResponse>(responseContent);
+                return responseData.data.total;
+            }
+
+            return -1;
+        }
+
+
+
         private string GetEmailFromToken(string token)
         {
             var tokenReader = new TokenReader(_appSettings.SecretKey);
@@ -496,12 +759,11 @@ namespace TechShopBackendDotnet.Controllers
 
         public class OrderModel
         {
-            public OrderInput infor { get; set; }
+            public OrderInputModel infor { get; set; }
             public List<OrderDetail> product { get; set; }
         }
 
-
-        public class OrderInput
+        public class OrderInputModel
         {
             public int Id { get; set; }
 
