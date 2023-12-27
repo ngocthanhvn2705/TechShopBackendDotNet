@@ -57,7 +57,7 @@ namespace TechShopBackendDotnet.Controllers
         }
 
 
-        [HttpGet]
+        [HttpGet("read")]
         public ActionResult ReadCustomer()
         {
             var jwt = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
