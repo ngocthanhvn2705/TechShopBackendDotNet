@@ -249,7 +249,7 @@ namespace TechShopBackendDotnet.Controllers
 
             return Ok(new
             {
-                status = "200",
+                status = 200,
                 jwt = token,
                 message = "Login Successfully",
                 data = new
