@@ -15,6 +15,33 @@ namespace TechShopBackendDotnet.Controllers
             _context = context;
         }
 
+        [HttpGet("read")]
+        public ActionResult Read()
+        {
+            var allProductQuery = from p in _context.Products
+                                  select new
+                                  {
+                                      id = p.Id,
+                                      name = p.Name,
+                                      price = p.Price,
+                                      description = p.Description,
+                                      category = p.Category,
+                                      brand = p.Brand,
+                                      pre_discount = p.PreDiscount,
+                                      discount_percent = p.DiscountPercent,
+                                      image = p.Image
+                                  };
+
+            var allProduct = allProductQuery.ToList();
+
+            var result = new
+            {
+                product = allProduct
+            };
+
+            return Ok(result);
+        }
+
 
         [HttpGet("show_color")]
         public ActionResult ShowColor(int id)
