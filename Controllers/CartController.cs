@@ -259,7 +259,7 @@ namespace TechShopBackendDotnet.Controllers
         }
 
         [HttpDelete("deleteAll")]
-        public ActionResult DeleteAllCartDetail(CartDetailModel cd)
+        public ActionResult DeleteAllCartDetail()
         {
             try
             {
