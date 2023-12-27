@@ -552,7 +552,7 @@ namespace TechShopBackendDotnet.Controllers
                                 <h1 style=""color: #202123; font-size: 32px; margin: 0 0 20px;"">Password Reset</h1>
                                 <p>We received a request to reset your TechShop passwor. Click ""Reset Password"" to create a new password. Please set a new password immediately.</p>
                                 <p style=""margin: 24px 0 0; text-align: left;"">
-                                    <a href=""https://techshopui.vercel.app/reset-password?token=" + token + @""" style=""display: inline-block; text-decoration: none; background: #10a37f; border-radius: 3px; color: white; font-family: Helvetica, sans-serif; font-size: 16px; line-height: 24px; font-weight: 400; padding: 12px 20px 11px; margin: 0px;"" target=""_blank"">
+                                    <a href=""https://techshopui.vercel.app/forget/reset?token=" + token + @""" style=""display: inline-block; text-decoration: none; background: #10a37f; border-radius: 3px; color: white; font-family: Helvetica, sans-serif; font-size: 16px; line-height: 24px; font-weight: 400; padding: 12px 20px 11px; margin: 0px;"" target=""_blank"">
                                 Reset Password
                                     </a>
                                 </p>
