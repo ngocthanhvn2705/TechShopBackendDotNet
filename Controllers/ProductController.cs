@@ -120,9 +120,9 @@ namespace TechShopBackendDotnet.Controllers
         }
 
         [HttpGet("search")]
-        public ActionResult Search(string keyword = null)
+        public ActionResult Search(string key = null)
         {
-            var normalizedKeyword = keyword?.Replace(" ", "").ToLower(); 
+            var normalizedKeyword = key?.Replace(" ", "").ToLower(); 
 
             var productQuery = from p in _context.Products
                                join c in _context.Categories on p.Category equals c.Id
@@ -140,23 +140,23 @@ namespace TechShopBackendDotnet.Controllers
                                        4, normalizedName 
                                select new
                                {
-                                   p.Id,
-                                   p.Name,
-                                   p.Price,
-                                   p.Description,
-                                   p.Image,
-                                   p.Category,
-                                   p.Brand,
-                                   p.PreDiscount,
-                                   p.DiscountPercent
+                                   id =  p.Id,
+                                   name = p.Name,
+                                   price = p.Price,
+                                   description = p.Description,
+								   image = p.Image,
+								   category = p.Category,
+								   brand = p.Brand,
+								   pre_discount = p.PreDiscount,
+								   discount_percent = p.DiscountPercent
                                };
 
 
-            var products = productQuery.ToList();
+            var product = productQuery.ToList();
 
             var result = new
             {
-                products
+                product = product
             };
 
             return Ok(result);
