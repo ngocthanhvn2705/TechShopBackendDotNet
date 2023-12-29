@@ -214,8 +214,8 @@ namespace TechShopBackendDotnet.Controllers
                     City = orderData.infor.City,
                     Phone = orderData.infor.Phone,
                     DiscountId = (discountQuery == null) ? null : discountQuery.Id,
-                    ShippingFee = orderData.infor.ShippingFee,
-                    TotalPrice = orderData.infor.TotalPrice,
+                    ShippingFee = orderData.infor.Shipping_fee,
+                    TotalPrice = orderData.infor.Total_price,
                     Note = orderData.infor.Note,
                     OrderDate = today,
                     DeliveryType = orderData.infor.Delivery_type,
@@ -308,8 +308,8 @@ namespace TechShopBackendDotnet.Controllers
                     City = orderData.infor.City,
                     Phone = orderData.infor.Phone,
                     DiscountId = (discountQuery == null) ? null : discountQuery.Id,
-                    ShippingFee = orderData.infor.ShippingFee,
-                    TotalPrice = orderData.infor.TotalPrice,
+                    ShippingFee = orderData.infor.Shipping_fee,
+                    TotalPrice = orderData.infor.Total_price,
                     Note = orderData.infor.Note,
                     OrderDate = today,
                     DeliveryType = orderData.infor.Delivery_type,
@@ -765,8 +765,6 @@ namespace TechShopBackendDotnet.Controllers
 
         public class OrderInputModel
         {
-            public int Id { get; set; }
-
             public string? Email { get; set; }
 
             public string Name { get; set; }
@@ -779,17 +777,15 @@ namespace TechShopBackendDotnet.Controllers
 
             public string City { get; set; }
 
-
             public string Phone { get; set; }
+			public int Shipping_fee { get; set; }
 
-            public string? Discount_code { get; set; }
+			public string? Discount_code { get; set; }
 
-            public double ShippingFee { get; set; }
 
-            public double TotalPrice { get; set; }
+            public double Total_price { get; set; }
 
             public string? Note { get; set; }
-
 
             public string Delivery_type { get; set; }
             public string Payment_type { get; set; }
