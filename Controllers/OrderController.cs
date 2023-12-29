@@ -760,7 +760,15 @@ namespace TechShopBackendDotnet.Controllers
         public class OrderModel
         {
             public OrderInputModel infor { get; set; }
-            public List<OrderDetail> product { get; set; }
+            public List<OrderDetailInput> product { get; set; }
+        }
+
+        public class OrderDetailInput
+        {
+            public int ProductId { get; set; }
+            public string Color { get; set; }
+            public int Quantity { get; set; }
+            public double Price { get; set; }
         }
 
         public class OrderInputModel
