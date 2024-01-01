@@ -371,7 +371,7 @@ namespace TechShopBackendDotnet.Controllers
                         return Ok(new { status = 303, message = "Key has expired" });
                     }
 
-                    return Ok(new { statu = 200, message = "Email authentication successful" });
+                    return Ok(new { status = 200, message = "Email authentication successful" });
                 }
                 else
                 {

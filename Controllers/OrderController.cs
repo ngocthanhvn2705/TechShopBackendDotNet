@@ -7,8 +7,12 @@ using static TechShopBackendDotnet.Controllers.OrderController;
 using TechShopBackendDotnet.OtherModels;
 using System.Text.Json;
 using System.Text;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
+using System.Xml.Linq;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using static TechShopBackendDotnet.Controllers.DiscountController;
 
 namespace TechShopBackendDotnet.Controllers
 {
@@ -19,16 +23,18 @@ namespace TechShopBackendDotnet.Controllers
         private readonly TechShopContext _context;
         private readonly AppSettings _appSettings;
         private readonly HttpClient _httpClient;
+		private readonly EmailService _emailService;
 
-        public OrderController(TechShopContext context, AppSettings appSettings, HttpClient httpClient)
-        {
-            _context = context;
-            _appSettings = appSettings;
-            _httpClient = httpClient;
-        }
+		public OrderController(TechShopContext context, AppSettings appSettings, HttpClient httpClient, EmailService emailService)
+		{
+			_context = context;
+			_appSettings = appSettings;
+			_httpClient = httpClient;
+			_emailService = emailService;
+		}
 
-      
-        public class ReadGuestModel
+
+		public class ReadGuestModel
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -206,7 +212,7 @@ namespace TechShopBackendDotnet.Controllers
 
                 Order order = new Order
                 {
-                    CustomerEmail = orderData.infor.Email,
+                    CustomerEmail = null,
                     Name = orderData.infor.Name,
                     Address = orderData.infor.Address,
                     Ward = orderData.infor.Ward,
@@ -219,30 +225,55 @@ namespace TechShopBackendDotnet.Controllers
                     Note = orderData.infor.Note,
                     OrderDate = today,
                     DeliveryType = orderData.infor.Delivery_type,
-                    PaymentType = orderData.infor.Payment_type,
-                    Status = "Processing"
-                };
+					PaymentType = orderData.infor.Payment_type,
+					Status = "Processing"
+				};
 
-                _context.Orders.Add(order);
+
+
+				_context.Orders.Add(order);
                 if (discountQuery != null)
                 {
                     discountQuery.Quantity -= 1;
                 }
                 _context.SaveChanges();
 
+                string tbody = "";
+                int orderId = 0;
 
                 foreach (var orderDetailData in orderData.product)
                 {
-                    OrderDetail orderDetail = new OrderDetail
+                    var nameProduct = (from p in _context.Products
+                                       where p.Id == orderDetailData.ProductId
+                                       select p.Name).FirstOrDefault();
+                    orderId = order.Id;
+
+					OrderDetail orderDetail = new OrderDetail
                     {
-                        OrderId = order.Id, // Sử dụng Id mới tạo của Order
+                        OrderId = order.Id, 
                         ProductId = orderDetailData.ProductId,
                         Color = orderDetailData.Color,
                         Quantity = orderDetailData.Quantity,
                         Price = orderDetailData.Price
                     };
+                    var totalPrice = orderDetailData.Price * orderDetailData.Quantity;
 
-                    var updateProductQuantities = _context.ProductQuantities
+					var tbody_data = @"<tr>
+							            <td> {0} </td>
+							            <td> {1} </td>
+							            <td> {2} </td>
+							            <td> {3} </td>
+							            <td> {4} VNĐ</td>
+							            <td> {5} VNĐ</td>
+						               </tr> ";
+                    tbody_data = string.Format(
+                        tbody_data, orderDetailData.ProductId, nameProduct, orderDetailData.Color,
+                        orderDetailData.Quantity, orderDetailData.Price.ToString("#,##0"),
+						totalPrice.ToString("#,##0"));
+
+                    tbody += tbody_data + " ";
+
+					var updateProductQuantities = _context.ProductQuantities
                             .FirstOrDefault(pq => pq.ProductId == orderDetailData.ProductId && pq.Color == orderDetailData.Color);
 
                     updateProductQuantities.Quantity -= orderDetailData.Quantity;
@@ -251,6 +282,18 @@ namespace TechShopBackendDotnet.Controllers
                     _context.OrderDetails.Add(orderDetail);
                 }
                 _context.SaveChanges();
+                try
+                {
+                    OrderInputModel data = new OrderInputModel();
+                    data = orderData.infor;
+                    string body = BodySendSuccessEmail(data.Name, orderId, data.Address, data.Ward, data.District, data.City, data.Phone, data.Shipping_fee, data.Discount_code, data.Total_price, data.Note, data.Delivery_type, data.Payment_type, tbody);
+                    Console.WriteLine(body);
+					_emailService.SendEmail(orderData.infor.Email, "Xác nhận đơn hàng từ TechShop", body);
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex);
+                }
 
                 return Ok(new
                 {
@@ -258,15 +301,15 @@ namespace TechShopBackendDotnet.Controllers
                     message = "Order Successfully"
                 });
 
-            }
-            catch (Exception ex)
-            {
-                return Ok(new
+                }
+                catch (Exception ex)
                 {
-                    status = 300,
-                    message = ex.Message
-                });
-            }
+                    return Ok(new
+                    {
+                        status = 300,
+                        message = ex.Message
+                    });
+                }
         }
 
         [HttpPut("order")]
@@ -735,7 +778,7 @@ namespace TechShopBackendDotnet.Controllers
             return -1;
         }
 
-
+        
 
         private string GetEmailFromToken(string token)
         {
@@ -798,5 +841,116 @@ namespace TechShopBackendDotnet.Controllers
             public string Delivery_type { get; set; }
             public string Payment_type { get; set; }
         }
-    }
+
+		private string BodySendSuccessEmail(string Name, int orderId, string Address, string Ward, string District, string City, string Phone, int Shipping_fee, string Discount_code, double Total_price, string Note, string Delivery_type, string Payment_type, string body)
+		{
+			string htmlString = $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Xác nhận đơn hàng</title>
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f4f4f4;
+                    }}
+                    .container {{
+                        width: 80%;
+                        margin: 0 auto;
+                        background-color: #fff;
+                        padding: 20px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    }}
+                    h2 {{
+                        text-align: center;
+                        color: #333;
+                    }}
+                    img {{
+                        display: block;
+                        margin: 0 auto;
+                        width: 100px;
+                    }}
+                    ul {{
+                        list-style: none;
+                        padding: 0;
+                    }}
+                    table {{
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                        color: black;
+                    }}
+                    table, th, td {{
+                        border: 1px solid #ddd;
+                        text-align: center;
+                    }}
+                    th, td {{
+                        padding: 8px;
+                        text-align: left;
+                    }}
+                    th {{
+                        background-color: #f2f2f2;
+                    }}
+                    b {{
+                        color: #3366cc;
+                    }}
+                    footer {{
+                        margin-top: 20px;
+                        text-align: center;
+                        color: #777;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div style=""text-align: center;"">
+                        <img alt="""" src=""https://img.upanh.tv/2023/11/30/techShopLogo.jpg"" style=""object-fit: cover; border-radius: 50%; display: block; outline: none; text-decoration: none; height: 50px; width: 50px; font-size: 13px;"" class=""CToWUd"" data-bit=""iit"">
+                    </div>   
+                    <p>Xin chào, <b>{Name}</b></p>
+                    <p>Cảm ơn bạn đã mua hàng tại TechShop.</p>
+                    <ul>
+                        <li>Đơn hàng: <b>#{orderId}</b></li>
+                        <li>Địa chỉ giao hàng: <b>{Address}, {Ward}, {District}, {City}</b></li>
+                        <li>Số điện thoại liên lạc: <b>{Phone}</b></li>
+                        <li>Phí vận chuyển: <b>{Shipping_fee} VNĐ</b></li>
+                        <li>Mã giảm giá: <b>{Discount_code}</b></li>
+                        <li>Tổng giá trị đơn hàng: <b>{Total_price:N0} VNĐ</b></li>
+                        <li>Ghi chú: <b>{Note}</b></li>
+                        <li>Hình thức giao hàng: <b>{Delivery_type}</b></li>
+                        <li>Hình thức thanh toán: <b>{Payment_type}</b></li>
+                    </ul>
+                    <table border='1' cellpadding='6' cellspacing='0'>
+                        <thead>
+                            <tr>
+                                <th>Mã sản phẩm</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Màu sắc</th>
+                                <th>Số lượng</th>
+                                <th>Giá bán</th>
+                                <th>Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {body}
+                        </tbody>
+                    </table>
+                    <footer>
+                      <p>Chúng tôi sẽ giao hàng đến địa chỉ của bạn trong vòng 3-5 ngày làm việc.</p>
+                      <p>Nếu có bất kỳ thắc mắc, vui lòng liên hệ với chúng tôi qua email hoặc điện thoại.</p>
+                      <p>Trân trọng,</p>
+                      <p>TechShop</p>
+                    </footer>
+                </div>
+            </body>
+            </html>";
+
+
+			return htmlString;
+		}
+
+	}
 }
+
