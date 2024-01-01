@@ -94,16 +94,48 @@ namespace TechShopBackendDotnet.Controllers
             return Ok(result);
         }
 
+		public class signUpModel
+		{
+			public string? Email { get; set; }
+			public string? Name { get; set; }
+			public string? Password { get; set; }
+			public string? Phone { get; set; }
+			public string? Gender { get; set; }
+			public string? Birthday { get; set; }
+			public string? Address { get; set; }
+			public string? Ward { get; set; }
+			public string? District { get; set; }
+			public string? City { get; set; }
+		}
 
 
-        [HttpPost("signup")]
-        public ActionResult CreateCustomer(Customer customer)
+
+		[HttpPost("signup")]
+        public ActionResult CreateCustomer(signUpModel customerInput)
         {
-            var existingCustomer = _context.Customers.Find(customer.Email);
+			string format = "dd-MM-yyyy";
+			DateTime parsedDate = DateTime.ParseExact(customerInput.Birthday, format, System.Globalization.CultureInfo.InvariantCulture);
+
+            Customer customer = new Customer();
+            customer.Email = customerInput.Email;
+            customer.Name = customerInput.Name;
+            customer.Password = customerInput.Password;
+            customer.Phone = customerInput.Phone;
+            customer.Gender = customerInput.Gender;
+            customer.Birthday = DateOnly.FromDateTime(parsedDate);
+            customer.Address = customerInput.Address;
+            customer.Ward = customerInput.Ward;
+            customer.District = customerInput.District;
+            customer.City = customerInput.City;
+            customer.Status = "active";
+
+
+			var existingCustomer = _context.Customers.Find(customer.Email);
 
             if (existingCustomer == null)
             {
                 customer.Password = PasswordHasher.HashPassword(customer.Password);
+
 
                 _context.Customers.Add(customer);
                 _context.SaveChanges();

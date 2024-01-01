@@ -61,16 +61,15 @@ public partial class Customer
     public string City { get; set; }
 
     [Column("IMAGE", TypeName = "mediumblob")]
-    public byte[] Image { get; set; }
+    public byte[]? Image { get; set; }
 
-    [Required]
     [Column("STATUS")]
     [StringLength(255)]
     public string Status { get; set; }
 
     [Column("reset_token_hash")]
     [StringLength(64)]
-    public string ResetTokenHash { get; set; }
+    public string? ResetTokenHash { get; set; }
 
     [Column("reset_token_expires_at", TypeName = "datetime")]
     public DateTime? ResetTokenExpiresAt { get; set; }
