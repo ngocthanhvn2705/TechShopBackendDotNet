@@ -24,20 +24,33 @@ namespace TechShopBackendDotnet.Controllers
         [HttpGet]
         public ActionResult Get()
         {
-            var reviews = _context.Reviews;
-            return Ok(reviews);
+            var review = _context.Reviews;
+            return Ok(review);
         }
 
 
         [HttpGet("read")]
         public ActionResult Read(int product_id)
         {
-            var reviews = _context.Reviews
-                            .Where(r => r.ProductId == product_id)
-                            .OrderByDescending(r => r.CreatedAt)
-                            .ToList();
+			var reviewsQuery = from r in _context.Reviews
+						  join c in _context.Customers on r.CustomerEmail equals c.Email
+						  where r.ProductId == product_id
+						  orderby r.CreatedAt descending
+						  select new
+						  {
+                            id = r.Id,
+                            customer_email = r.CustomerEmail,
+                            name = c.Name,
+                            rating = r.Rating,
+                            content = r.Content,
+                            admin_reply = r.AdminReply,
+                            created_at = r.CreatedAt,
+                            updated_at = r.UpdatedAt
+						  };
 
-            if (reviews.Count == 0) 
+            var reviews = reviewsQuery.ToList();
+
+			if (reviews.Count == 0) 
             {
                 return Ok(new
                 {
@@ -48,7 +61,7 @@ namespace TechShopBackendDotnet.Controllers
 
             return Ok(new
             {
-                reviews = reviews 
+                review = reviews 
             });
         }
 
