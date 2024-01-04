@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using TechShopBackendDotnet.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static TechShopBackendDotnet.Controllers.ProductController;
@@ -481,8 +482,20 @@ namespace TechShopBackendDotnet.Controllers
 			}
 
 			var products = _context.Products
-				.FromSqlRaw(query)
-				.ToList();
+						.FromSqlRaw(query)
+						.Select(p => new
+						{
+							id = p.Id,
+							name = p.Name,
+							price = p.Price,
+							description = p.Description,
+							category = p.Category,
+							brand = p.Brand,
+							pre_discount = p.PreDiscount,
+							discount_percent = p.DiscountPercent,
+							image = p.Image
+						})
+						.ToList();
 
 
 			return Ok(new {product = products });
@@ -695,8 +708,20 @@ namespace TechShopBackendDotnet.Controllers
 			}
 
 			var products = _context.Products
-				.FromSqlRaw(query)
-				.ToList();
+						.FromSqlRaw(query)
+						.Select(p => new
+						{
+							id = p.Id,
+							name = p.Name,
+							price = p.Price,
+							description = p.Description,
+							category = p.Category,
+							brand = p.Brand,
+							pre_discount = p.PreDiscount,
+							discount_percent = p.DiscountPercent,
+							image = p.Image
+						})
+						.ToList();
 
 			return Ok( new { product = products } );
 		}
@@ -917,8 +942,20 @@ namespace TechShopBackendDotnet.Controllers
 			}
 
 			var products = _context.Products
-				.FromSqlRaw(query)
-				.ToList();
+						.FromSqlRaw(query)
+						.Select(p => new
+						{
+							id = p.Id,
+							name = p.Name,
+							price = p.Price,
+							description = p.Description,
+							category = p.Category,
+							brand = p.Brand,
+							pre_discount = p.PreDiscount,
+							discount_percent = p.DiscountPercent,
+							image = p.Image
+						})
+						.ToList();
 
 			return Ok(new { product = products });
 		}
@@ -1102,8 +1139,20 @@ namespace TechShopBackendDotnet.Controllers
 			}
 
 			var products = _context.Products
-				.FromSqlRaw(query)
-				.ToList();
+						.FromSqlRaw(query)
+						.Select(p => new
+						{
+							id = p.Id,
+							name = p.Name,
+							price = p.Price,
+							description = p.Description,
+							category = p.Category,
+							brand = p.Brand,
+							pre_discount = p.PreDiscount,
+							discount_percent = p.DiscountPercent,
+							image = p.Image
+						})
+						.ToList();
 
 			return Ok(new { product = products });
 		}
