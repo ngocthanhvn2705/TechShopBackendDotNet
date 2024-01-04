@@ -17,7 +17,7 @@ builder.Services.AddCors(
             name: myAllowSpecificOrigins,
             policy =>
             {
-                policy.WithOrigins("http://localhost:3000", "https://techshopui.vercel.app/")
+                policy.WithOrigins("http://localhost:3000", "https://techshopui.vercel.app")
                     .AllowAnyMethod()
                     .AllowAnyHeader();
             });
