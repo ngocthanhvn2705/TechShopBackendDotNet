@@ -871,36 +871,39 @@ namespace TechShopBackendDotnet.Controllers
 			}
 
 			string checkLength = "CAST(SUBSTRING_INDEX(LENGTH, ' ', 1) AS DECIMAL(10,1))";
-			if (length != null && length.Length > 1)
+			if (length != null)
 			{
-				List<string> capacityConditions = new List<string>();
-				foreach (var item in length)
+				if (length != null && length.Length > 1)
 				{
-					switch (item)
+					List<string> capacityConditions = new List<string>();
+					foreach (var item in length)
 					{
-						case "1":
-							capacityConditions.Add($"{checkLength} < 1 ");
-							break;
-						case "12":
-							capacityConditions.Add($"{checkLength} BETWEEN 1 AND 2 ");
-							break;
+						switch (item)
+						{
+							case "1":
+								capacityConditions.Add($"{checkLength} < 1 ");
+								break;
+							case "12":
+								capacityConditions.Add($"{checkLength} BETWEEN 1 AND 2 ");
+								break;
+						}
+					}
+					if (capacityConditions.Count > 0)
+					{
+						query += " AND (" + string.Join(" OR ", capacityConditions) + ")";
 					}
 				}
-				if (capacityConditions.Count > 0)
+				else
 				{
-					query += " AND (" + string.Join(" OR ", capacityConditions) + ")";
-				}
-			}
-			else
-			{
-				switch (length[0])
-				{
-					case "1":
-						query += $" AND {checkLength} < 1 ";
-						break;
-					case "12":
-						query += $" AND {checkLength} BETWEEN 1 AND 2 ";
-						break;
+					switch (length[0])
+					{
+						case "1":
+							query += $" AND {checkLength} < 1 ";
+							break;
+						case "12":
+							query += $" AND {checkLength} BETWEEN 1 AND 2 ";
+							break;
+					}
 				}
 			}
 
