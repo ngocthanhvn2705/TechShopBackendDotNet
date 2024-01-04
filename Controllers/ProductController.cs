@@ -327,7 +327,7 @@ namespace TechShopBackendDotnet.Controllers
 
         }
 
-		[HttpGet("/sort/adapter/showProp")]
+		[HttpGet("/api/product/sort/adapter/showProp")]
 		public IActionResult ShowPropAdapter(string prop)
 		{
 			List<string> data = new List<string>();
@@ -364,7 +364,7 @@ namespace TechShopBackendDotnet.Controllers
 			return Ok(new { status = 200, data });
 		}
 
-        [HttpPost("/sort/adapter/sort")]
+        [HttpPost("/api/product/sort/adapter/sort")]
 		public IActionResult SortAdapter(SortAdapterModel sortAdapterModel)
 		{
 			string[] brand = SplitStringToArray(sortAdapterModel.Brand);
@@ -436,51 +436,54 @@ namespace TechShopBackendDotnet.Controllers
 			}
 
 			string checkCharger = "CAST(SUBSTRING_INDEX(MAXIMUM, ' ', 1) AS DECIMAL(10))";
-			if (charger != null && charger.Length > 1)
+			if (charger != null)
 			{
-				List<string> chargerConditions = new List<string>();
-				foreach (var item in charger)
+				if (charger != null && charger.Length > 1)
 				{
-					switch (item)
+					List<string> chargerConditions = new List<string>();
+					foreach (var item in charger)
+					{
+						switch (item)
+						{
+							case "15":
+								chargerConditions.Add($"{checkCharger} < 15");
+								break;
+							case "1525":
+								chargerConditions.Add($"{checkCharger} BETWEEN 15 AND 25");
+								break;
+							case "2660":
+								chargerConditions.Add($"{checkCharger} BETWEEN 26 AND 60");
+								break;
+							case "60":
+								chargerConditions.Add($"{checkCharger} > 60");
+								break;
+						}
+					}
+					if (chargerConditions.Count > 0)
+					{
+						query += " AND (" + string.Join(" OR ", chargerConditions) + ")";
+					}
+				}
+				else
+				{
+					switch (charger[0])
 					{
 						case "15":
-							chargerConditions.Add($"{checkCharger} < 15");
+							query += $" AND {checkCharger} < 15 ";
 							break;
 						case "1525":
-							chargerConditions.Add($"{checkCharger} BETWEEN 15 AND 25");
+							query += $" AND {checkCharger} BETWEEN 15 AND 25 ";
 							break;
 						case "2660":
-							chargerConditions.Add($"{checkCharger} BETWEEN 26 AND 60");
+							query += $" AND {checkCharger} BETWEEN 26 AND 60 ";
 							break;
 						case "60":
-							chargerConditions.Add($"{checkCharger} > 60");
+							query += $" AND {checkCharger} > 60 ";
 							break;
 					}
 				}
-				if (chargerConditions.Count > 0)
-				{
-					query += " AND (" + string.Join(" OR ", chargerConditions) + ")";
-				}
 			}
-			else
-			{
-				switch (charger[0])
-				{
-					case "15":
-						query += $" AND {checkCharger} < 15 ";
-						break;
-					case "1525":
-						query += $" AND {checkCharger} BETWEEN 15 AND 25 ";
-						break;
-					case "2660":
-						query += $" AND {checkCharger} BETWEEN 26 AND 60 ";
-						break;
-					case "60":
-						query += $" AND {checkCharger} > 60 ";
-						break;
-				}
-			}
-
+	
 			var products = _context.Products
 						.FromSqlRaw(query)
 						.Select(p => new
@@ -503,7 +506,7 @@ namespace TechShopBackendDotnet.Controllers
 		}
 
 
-		[HttpGet("/sort/backupcharger/showProp")]
+		[HttpGet("/api/product/sort/backupcharger/showProp")]
 		public ActionResult showPropBackupcharger(string prop)
 		{
 			List<string> data = new List<string>();
@@ -545,7 +548,7 @@ namespace TechShopBackendDotnet.Controllers
 			return Ok(new { status = 200, data });
 		}
 
-		[HttpPost("/sort/backupcharger/sort")]
+		[HttpPost("/api/product/sort/backupcharger/sort")]
 		public IActionResult SortBackupcharger(SortBackupchargerModel sortBackupchargerModel)
 		{
 			string[] brand = SplitStringToArray(sortBackupchargerModel.Brand);
@@ -616,94 +619,100 @@ namespace TechShopBackendDotnet.Controllers
 			}
 
 			string checkCapacity = "CAST(SUBSTRING_INDEX(CAPACITY, ' ', 1) AS DECIMAL(10))";
-			if (capacity != null && capacity.Length > 1)
+			if (capacity != null)
 			{
-				List<string> capacityConditions = new List<string>();
-				foreach (var item in capacity)
+				if (capacity != null && capacity.Length > 1)
 				{
-					switch (item)
+					List<string> capacityConditions = new List<string>();
+					foreach (var item in capacity)
 					{
-						case "Dưới 10000 mAh":
-							capacityConditions.Add($"{checkCapacity} < 10000 ");
-							break;
-						case "10000 mAh":
-							capacityConditions.Add($"{checkCapacity} = 10000 ");
-							break;
-						case "15000 mAh":
-							capacityConditions.Add($"{checkCapacity} = 15000 ");
-							break;
-						case "20000 mAh":
-							capacityConditions.Add($"{checkCapacity} = 20000 ");
-							break;
+						switch (item)
+						{
+							case "Dưới 10000 mAh":
+								capacityConditions.Add($"{checkCapacity} < 10000 ");
+								break;
+							case "10000 mAh":
+								capacityConditions.Add($"{checkCapacity} = 10000 ");
+								break;
+							case "15000 mAh":
+								capacityConditions.Add($"{checkCapacity} = 15000 ");
+								break;
+							case "20000 mAh":
+								capacityConditions.Add($"{checkCapacity} = 20000 ");
+								break;
+						}
+					}
+					if (capacityConditions.Count > 0)
+					{
+						query += " AND (" + string.Join(" OR ", capacityConditions) + ")";
 					}
 				}
-				if (capacityConditions.Count > 0)
+				else
 				{
-					query += " AND (" + string.Join(" OR ", capacityConditions) + ")";
-				}
-			}
-			else
-			{
-				switch (capacity[0])
-				{
-					case "Dưới 10000 mAh":
-						query += $" AND {checkCapacity} < 10000 ";
-						break;
-					case "10000 mAh":
-						query += $" AND {checkCapacity} = 10000 ";
-						break;
-					case "15000 mAh":
-						query += $" AND {checkCapacity} = 15000 ";
-						break;
-					case "20000 mAh":
-						query += $" AND {checkCapacity} = 20000 ";
-						break;
+					switch (capacity[0])
+					{
+						case "Dưới 10000 mAh":
+							query += $" AND {checkCapacity} < 10000 ";
+							break;
+						case "10000 mAh":
+							query += $" AND {checkCapacity} = 10000 ";
+							break;
+						case "15000 mAh":
+							query += $" AND {checkCapacity} = 15000 ";
+							break;
+						case "20000 mAh":
+							query += $" AND {checkCapacity} = 20000 ";
+							break;
+					}
 				}
 			}
 
 			string checkCharger = "CAST(SUBSTRING_INDEX(SUBSTRING(SUBSTRING_INDEX(NAME, 'W', 1), -5), ' ', -1)AS DECIMAL(10,1))";
-			if (charger != null && charger.Length > 1)
+			if (charger != null)
 			{
-				List<string> chargerConditions = new List<string>();
-				foreach (var item in charger)
+				if (charger != null && charger.Length > 1)
 				{
-					switch (item)
+					List<string> chargerConditions = new List<string>();
+					foreach (var item in charger)
 					{
-						case "15":
-							chargerConditions.Add($"{checkCharger} < 15");
-							break;
-						case "1525":
-							chargerConditions.Add($"{checkCharger} BETWEEN 15 AND 25");
-							break;
-						case "2660":
-							chargerConditions.Add($"{checkCharger} BETWEEN 26 AND 60");
-							break;
-						case "60":
-							chargerConditions.Add($"{checkCharger} > 60");
-							break;
+						switch (item)
+						{
+							case "15":
+								chargerConditions.Add($"{checkCharger} < 15");
+								break;
+							case "1525":
+								chargerConditions.Add($"{checkCharger} BETWEEN 15 AND 25");
+								break;
+							case "2660":
+								chargerConditions.Add($"{checkCharger} BETWEEN 26 AND 60");
+								break;
+							case "60":
+								chargerConditions.Add($"{checkCharger} > 60");
+								break;
+						}
+					}
+					if (chargerConditions.Count > 0)
+					{
+						query += " AND (" + string.Join(" OR ", chargerConditions) + ")";
 					}
 				}
-				if (chargerConditions.Count > 0)
+				else
 				{
-					query += " AND (" + string.Join(" OR ", chargerConditions) + ")";
-				}
-			}
-			else
-			{
-				switch (charger[0])
-				{
-					case "15":
-						query += $" AND {checkCharger} < 15 ";
-						break;
-					case "1525":
-						query += $" AND {checkCharger} BETWEEN 15 AND 25 ";
-						break;
-					case "2660":
-						query += $" AND {checkCharger} BETWEEN 26 AND 60 ";
-						break;
-					case "60":
-						query += $" AND {checkCharger} > 60 ";
-						break;
+					switch (charger[0])
+					{
+						case "15":
+							query += $" AND {checkCharger} < 15 ";
+							break;
+						case "1525":
+							query += $" AND {checkCharger} BETWEEN 15 AND 25 ";
+							break;
+						case "2660":
+							query += $" AND {checkCharger} BETWEEN 26 AND 60 ";
+							break;
+						case "60":
+							query += $" AND {checkCharger} > 60 ";
+							break;
+					}
 				}
 			}
 
@@ -728,7 +737,7 @@ namespace TechShopBackendDotnet.Controllers
 
 
 
-		[HttpGet("/sort/cable/showProp")]
+		[HttpGet("/api/product/sort/cable/showProp")]
 		public ActionResult showPropCable(string prop)
 		{
 			List<string> data = new List<string>();
@@ -772,7 +781,7 @@ namespace TechShopBackendDotnet.Controllers
 			return Ok(new { status = 200, data });
 		}
 
-		[HttpPost("/sort/cable/sort")]
+		[HttpPost("/api/product/sort/cable/sort")]
 		public IActionResult SortCable(SortCableModel sortCableModel)
 		{
 			string[] brand = SplitStringToArray(sortCableModel.Brand);
@@ -896,51 +905,53 @@ namespace TechShopBackendDotnet.Controllers
 			}
 
 			string checkCharger = "CAST(SUBSTRING_INDEX(MAXIMUM, ' W', 1) AS DECIMAL(10,1))";
-			if (charger != null && charger.Length > 1)
+			if (charger != null)
 			{
-				List<string> chargerConditions = new List<string>();
-				foreach (var item in charger)
+				if (charger != null && charger.Length > 1)
 				{
-					switch (item)
+					List<string> chargerConditions = new List<string>();
+					foreach (var item in charger)
+					{
+						switch (item)
+						{
+							case "15":
+								chargerConditions.Add($"{checkCharger} < 15");
+								break;
+							case "1525":
+								chargerConditions.Add($"{checkCharger} BETWEEN 15 AND 25");
+								break;
+							case "2660":
+								chargerConditions.Add($"{checkCharger} BETWEEN 26 AND 60");
+								break;
+							case "60":
+								chargerConditions.Add($"{checkCharger} > 60");
+								break;
+						}
+					}
+					if (chargerConditions.Count > 0)
+					{
+						query += " AND (" + string.Join(" OR ", chargerConditions) + ")";
+					}
+				}
+				else
+				{
+					switch (charger[0])
 					{
 						case "15":
-							chargerConditions.Add($"{checkCharger} < 15");
+							query += $" AND {checkCharger} < 15 ";
 							break;
 						case "1525":
-							chargerConditions.Add($"{checkCharger} BETWEEN 15 AND 25");
+							query += $" AND {checkCharger} BETWEEN 15 AND 25 ";
 							break;
 						case "2660":
-							chargerConditions.Add($"{checkCharger} BETWEEN 26 AND 60");
+							query += $" AND {checkCharger} BETWEEN 26 AND 60 ";
 							break;
 						case "60":
-							chargerConditions.Add($"{checkCharger} > 60");
+							query += $" AND {checkCharger} > 60 ";
 							break;
 					}
 				}
-				if (chargerConditions.Count > 0)
-				{
-					query += " AND (" + string.Join(" OR ", chargerConditions) + ")";
-				}
 			}
-			else
-			{
-				switch (charger[0])
-				{
-					case "15":
-						query += $" AND {checkCharger} < 15 ";
-						break;
-					case "1525":
-						query += $" AND {checkCharger} BETWEEN 15 AND 25 ";
-						break;
-					case "2660":
-						query += $" AND {checkCharger} BETWEEN 26 AND 60 ";
-						break;
-					case "60":
-						query += $" AND {checkCharger} > 60 ";
-						break;
-				}
-			}
-
 			var products = _context.Products
 						.FromSqlRaw(query)
 						.Select(p => new
@@ -963,7 +974,7 @@ namespace TechShopBackendDotnet.Controllers
 
 
 
-		[HttpGet("/sort/phone/showProp")]
+		[HttpGet("/api/product/sort/phone/showProp")]
 		public ActionResult showPropPhone(string prop)
 		{
 			List<string> data = new List<string>();
@@ -1009,7 +1020,7 @@ namespace TechShopBackendDotnet.Controllers
 			return Ok(new { status = 200, data });
 		}
 
-		[HttpPost("/sort/phone/sort")]
+		[HttpPost("/api/product/sort/phone/sort")]
 		public IActionResult SortPhone(SortPhoneModel sortPhoneModel)
 		{
 			string[] brand = SplitStringToArray(sortPhoneModel.Brand);
@@ -1090,51 +1101,54 @@ namespace TechShopBackendDotnet.Controllers
 				query += " AND 1";
 			}
 
-			
+
 
 			string checkCharger = "CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(BATTERY_CHARGER, 'mAh ', -1), ' ', 1) AS UNSIGNED) ";
-			if (charger != null && charger.Length > 1)
+			if (charger != null)
 			{
-				List<string> chargerConditions = new List<string>();
-				foreach (var item in charger)
+				if (charger != null && charger.Length > 1)
 				{
-					switch (item)
+					List<string> chargerConditions = new List<string>();
+					foreach (var item in charger)
 					{
-						case "15":
-							chargerConditions.Add($"{checkCharger} < 15");
-							break;
-						case "1525":
-							chargerConditions.Add($"{checkCharger} BETWEEN 15 AND 25");
-							break;
-						case "2660":
-							chargerConditions.Add($"{checkCharger} BETWEEN 26 AND 60");
-							break;
-						case "60":
-							chargerConditions.Add($"{checkCharger} > 60");
-							break;
+						switch (item)
+						{
+							case "15":
+								chargerConditions.Add($"{checkCharger} < 15");
+								break;
+							case "1525":
+								chargerConditions.Add($"{checkCharger} BETWEEN 15 AND 25");
+								break;
+							case "2660":
+								chargerConditions.Add($"{checkCharger} BETWEEN 26 AND 60");
+								break;
+							case "60":
+								chargerConditions.Add($"{checkCharger} > 60");
+								break;
+						}
+					}
+					if (chargerConditions.Count > 0)
+					{
+						query += " AND (" + string.Join(" OR ", chargerConditions) + ")";
 					}
 				}
-				if (chargerConditions.Count > 0)
+				else
 				{
-					query += " AND (" + string.Join(" OR ", chargerConditions) + ")";
-				}
-			}
-			else
-			{
-				switch (charger[0])
-				{
-					case "15":
-						query += $" AND {checkCharger} < 15 ";
-						break;
-					case "1525":
-						query += $" AND {checkCharger} BETWEEN 15 AND 25 ";
-						break;
-					case "2660":
-						query += $" AND {checkCharger} BETWEEN 26 AND 60 ";
-						break;
-					case "60":
-						query += $" AND {checkCharger} > 60 ";
-						break;
+					switch (charger[0])
+					{
+						case "15":
+							query += $" AND {checkCharger} < 15 ";
+							break;
+						case "1525":
+							query += $" AND {checkCharger} BETWEEN 15 AND 25 ";
+							break;
+						case "2660":
+							query += $" AND {checkCharger} BETWEEN 26 AND 60 ";
+							break;
+						case "60":
+							query += $" AND {checkCharger} > 60 ";
+							break;
+					}
 				}
 			}
 

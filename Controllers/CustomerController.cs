@@ -393,7 +393,7 @@ namespace TechShopBackendDotnet.Controllers
 			public string? Password { get; set; }
 		}
 
-		[HttpPost("send_reset_password")]
+		[HttpPost("send_password_reset")]
 		public IActionResult SendResetPassword([FromBody] ResetModell resetModell)
 		{
 
